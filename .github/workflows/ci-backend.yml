@@ -1,0 +1,137 @@
+name: Backend CI/CD (FastAPI)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-backend.yml'
+
+jobs:
+  test-backend:
+    name: Test FastAPI Backend
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: test
+          MONGO_INITDB_ROOT_PASSWORD: test
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio httpx
+      
+      - name: Lint with ruff
+        run: |
+          cd backend
+          pip install ruff
+          ruff check . --output-format=github
+      
+      - name: Type check with mypy
+        run: |
+          cd backend
+          pip install mypy
+          mypy . --ignore-missing-imports || true
+      
+      - name: Run tests with coverage
+        env:
+          MONGODB_URL: mongodb://test:test@localhost:27017
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET_KEY: test-secret-key-for-ci-only
+          JWT_ALGORITHM: HS256
+          OPENAI_API_KEY: test-key
+        run: |
+          cd backend
+          pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+      
+      - name: Security check with bandit
+        run: |
+          cd backend
+          pip install bandit
+          bandit -r . -f json -o bandit-report.json || true
+      
+      - name: Check for vulnerabilities
+        run: |
+          cd backend
+          pip install safety
+          safety check --json || true
+
+  lint-backend:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install linting tools
+        run: |
+          pip install ruff black isort
+      
+      - name: Check formatting with black
+        run: |
+          cd backend
+          black --check .
+      
+      - name: Check import sorting with isort
+        run: |
+          cd backend
+          isort --check-only .
+      
+      - name: Lint with ruff
+        run: |
+          cd backend
+          ruff check .
