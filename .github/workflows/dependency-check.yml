@@ -1,0 +1,107 @@
+name: Dependency Check & Updates
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/requirements.txt'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+
+jobs:
+  check-backend-deps:
+    name: Check Backend Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pip-audit
+      
+      - name: Check for vulnerabilities with pip-audit
+        run: |
+          cd backend
+          pip-audit --desc --format json > audit-results.json || true
+          pip-audit --desc
+      
+      - name: Check outdated packages
+        run: |
+          cd backend
+          pip list --outdated
+      
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-audit-results
+          path: backend/audit-results.json
+
+  check-frontend-deps:
+    name: Check Frontend Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Run npm audit
+        run: |
+          cd frontend
+          npm audit --json > audit-results.json || true
+          npm audit
+      
+      - name: Check outdated packages
+        run: |
+          cd frontend
+          npm outdated || true
+      
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-audit-results
+          path: frontend/audit-results.json
+
+  dependabot-auto-merge:
+    name: Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    needs: [check-backend-deps, check-frontend-deps]
+    
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v1
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      
+      - name: Auto-merge minor and patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-minor' || steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
