@@ -1,0 +1,106 @@
+name: Frontend CI/CD (React)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
+
+jobs:
+  test-frontend:
+    name: Test React Frontend
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: ['18', '20', '21']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Lint with ESLint
+        run: |
+          cd frontend
+          npm run lint
+      
+      - name: Type check with TypeScript
+        run: |
+          cd frontend
+          npm run type-check || npx tsc --noEmit
+      
+      - name: Run tests
+        run: |
+          cd frontend
+          npm run test -- --coverage --watchAll=false
+      
+      - name: Build application
+        run: |
+          cd frontend
+          npm run build
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+      
+      - name: Check bundle size
+        run: |
+          cd frontend
+          npm run build
+          npx bundlewatch --config bundlewatch.config.json || true
+
+  lint-frontend:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Check formatting with Prettier
+        run: |
+          cd frontend
+          npx prettier --check "src/**/*.{js,jsx,ts,tsx,json,css,scss,md}"
+      
+      - name: Lint with ESLint
+        run: |
+          cd frontend
+          npm run lint
+      
+      - name: Check for unused dependencies
+        run: |
+          cd frontend
+          npx depcheck || true
