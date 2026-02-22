@@ -59,19 +59,16 @@ jobs:
         run: |
           cd backend
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio httpx
+          pip install -r requirements-dev.lock
       
       - name: Lint with ruff
         run: |
           cd backend
-          pip install ruff
           ruff check . --output-format=github
       
       - name: Type check with mypy
         run: |
           cd backend
-          pip install mypy
           mypy . --ignore-missing-imports || true
       
       - name: Run tests with coverage
@@ -95,13 +92,11 @@ jobs:
       - name: Security check with bandit
         run: |
           cd backend
-          pip install bandit
           bandit -r . -f json -o bandit-report.json || true
       
       - name: Check for vulnerabilities
         run: |
           cd backend
-          pip install safety
           safety check --json || true
 
   lint-backend:
@@ -119,7 +114,8 @@ jobs:
       
       - name: Install linting tools
         run: |
-          pip install ruff black isort
+          cd backend
+          pip install -r requirements-dev.lock
       
       - name: Check formatting with black
         run: |
@@ -129,7 +125,7 @@ jobs:
       - name: Check import sorting with isort
         run: |
           cd backend
-          isort --check-only .
+          isort --profile black --check-only .
       
       - name: Lint with ruff
         run: |

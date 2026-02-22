@@ -16,6 +16,7 @@ jobs:
   test-frontend:
     name: Test React Frontend
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('frontend/package.json') != '' }}
     
     strategy:
       matrix:
@@ -73,6 +74,7 @@ jobs:
   lint-frontend:
     name: Lint & Format Check
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('frontend/package.json') != '' }}
     
     steps:
       - name: Checkout code
