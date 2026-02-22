@@ -51,3 +51,7 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.isort]
+profile = "black"
+line_length = 88

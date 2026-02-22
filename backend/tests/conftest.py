@@ -1,7 +1,7 @@
 import os
 
-import pytest
 import pymongo
+import pytest
 import redis
 from fastapi.testclient import TestClient
 

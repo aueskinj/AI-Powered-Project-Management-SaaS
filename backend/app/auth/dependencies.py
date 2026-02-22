@@ -39,21 +39,28 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any
     return user_doc
 
 
-async def get_current_active_user(current_user: dict[str, Any] = Depends(get_current_user)) -> dict[str, Any]:
+async def get_current_active_user(
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> dict[str, Any]:
     if not current_user.get("is_active", True):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
+        )
     return current_user
 
 
 def require_role(allowed_roles: list[UserRole | str]) -> Callable:
     normalized_roles = {
-        role.value if isinstance(role, UserRole) else role
-        for role in allowed_roles
+        role.value if isinstance(role, UserRole) else role for role in allowed_roles
     }
 
-    async def _role_dependency(current_user: dict[str, Any] = Depends(get_current_active_user)) -> dict[str, Any]:
+    async def _role_dependency(
+        current_user: dict[str, Any] = Depends(get_current_active_user),
+    ) -> dict[str, Any]:
         if current_user.get("role") not in normalized_roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+            )
         return current_user
 
     return _role_dependency

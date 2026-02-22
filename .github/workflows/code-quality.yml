@@ -13,6 +13,7 @@ jobs:
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
+    if: ${{ secrets.SONAR_TOKEN != '' }}
     
     steps:
       - name: Checkout code
@@ -46,6 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         language: ['python', 'javascript']
+    if: ${{ matrix.language != 'javascript' || hashFiles('frontend/package.json') != '' }}
     
     steps:
       - name: Checkout code
@@ -117,10 +119,12 @@ jobs:
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         with:
           node-version: '20'
       
       - name: Check JavaScript licenses
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         run: |
           cd frontend
           npm ci
@@ -157,20 +161,24 @@ jobs:
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         with:
           node-version: '20'
       
       - name: Install frontend dependencies
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         run: |
           cd frontend
           npm ci
       
       - name: Run frontend tests with coverage
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         run: |
           cd frontend
           npm run test -- --coverage --watchAll=false
       
       - name: Upload frontend coverage report
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage-report

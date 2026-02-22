@@ -125,7 +125,7 @@ jobs:
       - name: Check import sorting with isort
         run: |
           cd backend
-          isort --check-only .
+          isort --profile black --check-only .
       
       - name: Lint with ruff
         run: |

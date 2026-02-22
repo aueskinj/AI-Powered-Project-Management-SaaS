@@ -12,7 +12,9 @@ def test_create_access_token_contains_access_type() -> None:
 
 
 def test_create_refresh_token_contains_jti() -> None:
-    token, jti, _ = create_refresh_token(subject="507f1f77bcf86cd799439011", role="admin")
+    token, jti, _ = create_refresh_token(
+        subject="507f1f77bcf86cd799439011", role="admin"
+    )
     payload = decode_token(token)
 
     assert payload.sub == "507f1f77bcf86cd799439011"

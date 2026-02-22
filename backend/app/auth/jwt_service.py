@@ -11,7 +11,9 @@ class TokenError(Exception):
     pass
 
 
-def _create_token(subject: str, token_type: str, role: str, expires_delta: timedelta, jti: str | None) -> tuple[str, int, str | None]:
+def _create_token(
+    subject: str, token_type: str, role: str, expires_delta: timedelta, jti: str | None
+) -> tuple[str, int, str | None]:
     now = datetime.now(timezone.utc)
     expires_at = now + expires_delta
     payload = {
@@ -25,7 +27,9 @@ def _create_token(subject: str, token_type: str, role: str, expires_delta: timed
         payload["jti"] = jti
 
     settings = get_settings()
-    encoded_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    encoded_token = jwt.encode(
+        payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+    )
     return encoded_token, int(expires_at.timestamp()), jti
 
 
@@ -57,7 +61,9 @@ def create_refresh_token(subject: str, role: str) -> tuple[str, str, int]:
 def decode_token(token: str) -> TokenPayload:
     settings = get_settings()
     try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(
+            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
+        )
     except JWTError as exc:
         raise TokenError("Invalid token") from exc
 

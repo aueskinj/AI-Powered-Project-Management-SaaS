@@ -20,21 +20,31 @@ def test_register_login_refresh_logout_flow(client) -> None:
     access_token = token_payload["access_token"]
     refresh_token = token_payload["refresh_token"]
 
-    me_response = client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {access_token}"})
+    me_response = client.get(
+        "/api/v1/users/me", headers={"Authorization": f"Bearer {access_token}"}
+    )
     assert me_response.status_code == 200
     assert me_response.json()["email"] == "member@example.com"
 
-    refresh_response = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    refresh_response = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+    )
     assert refresh_response.status_code == 200
     rotated_refresh = refresh_response.json()["refresh_token"]
 
-    old_refresh_response = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    old_refresh_response = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+    )
     assert old_refresh_response.status_code == 401
 
-    logout_response = client.post("/api/v1/auth/logout", json={"refresh_token": rotated_refresh})
+    logout_response = client.post(
+        "/api/v1/auth/logout", json={"refresh_token": rotated_refresh}
+    )
     assert logout_response.status_code == 200
 
-    refresh_after_logout = client.post("/api/v1/auth/refresh", json={"refresh_token": rotated_refresh})
+    refresh_after_logout = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": rotated_refresh}
+    )
     assert refresh_after_logout.status_code == 401
 
 
