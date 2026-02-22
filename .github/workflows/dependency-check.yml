@@ -8,7 +8,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'backend/requirements.txt'
+      - 'backend/pyproject.toml'
+      - 'backend/requirements.lock'
+      - 'backend/requirements-dev.lock'
       - 'frontend/package.json'
       - 'frontend/package-lock.json'
 
@@ -29,8 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
-          pip install pip-audit
+          pip install -r requirements-dev.lock
       
       - name: Check for vulnerabilities with pip-audit
         run: |
@@ -87,7 +88,7 @@ jobs:
   dependabot-auto-merge:
     name: Auto-merge Dependabot PRs
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     needs: [check-backend-deps, check-frontend-deps]
     
     steps:

@@ -79,7 +79,9 @@ jobs:
           python-version: '3.11'
       
       - name: Install radon
-        run: pip install radon
+        run: |
+          cd backend
+          pip install -r requirements-dev.lock
       
       - name: Check cyclomatic complexity
         run: |
@@ -109,8 +111,7 @@ jobs:
       - name: Check Python licenses
         run: |
           cd backend
-          pip install -r requirements.txt
-          pip install pip-licenses
+          pip install -r requirements-dev.lock
           pip-licenses --format=markdown --output-file=licenses.md
           cat licenses.md
       
@@ -141,8 +142,7 @@ jobs:
       - name: Install backend dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install -r requirements-dev.lock
       
       - name: Run backend tests with coverage
         run: |
